@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><ServiceProvider>
-  <ApplicationName>test_server_updated</ApplicationName>
+  <ApplicationName>test_server</ApplicationName>
   <Description/>
   <InboundAuthenticationConfig>
     <InboundAuthenticationRequestConfigs>
