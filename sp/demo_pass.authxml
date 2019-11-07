@@ -76,31 +76,34 @@
     <UseTenantDomainInUsername>false</UseTenantDomainInUsername>
     <UseUserstoreDomainInUsername>false</UseUserstoreDomainInUsername>
     <EnableAuthorization>false</EnableAuthorization>
-    <AuthenticationScript enabled="true" language="application/javascript"><![CDATA[function onInitialRequest(context) {
-    prompt("username", {
-        onSuccess: function(context, data) {
-            var username = context.request.params.username[0];
-            Log.info("================================= onSuccess prompt");
-            Log.info("================================= " + username);
-            executeStep(1, {
-                authenticatorParams: {
-                    "local": {
-                        "BasicAuthenticator": {
-                            "username": username
-                        }
-                    }
-                }
-            }, {
-                onSuccess: function(context) {
-                    Log.info("================================= onSuccess basic auth");
-                }
-            });
-        },
-        onFail: function(context, data) {
-            Log.info('================================= onFail prompt');
-        }
-    });
-}
+    <AuthenticationScript enabled="true" language="application/javascript"><![CDATA[// Define conditional authentication by passing one or many Authentication Context Class References 
+// as comma separated values.
+
+// Specify the ordered list of ACR here.
+var supportedAcrValues = ['acr1', 'acr2', 'acr3'];
+
+var onLoginRequest = function(context) {
+    var selectedAcr = selectAcrFrom(context, supportedAcrValues);
+    Log.info('--------------- ACR selected: ' + selectedAcr);
+    context.selectedAcr = selectedAcr;
+    switch (selectedAcr) {
+        case supportedAcrValues[0] :
+            executeStep(1);
+            break;
+        case supportedAcrValues[1] :
+            executeStep(1);
+            executeStep(2);
+            break;
+        case supportedAcrValues[2] :
+            executeStep(1);
+            executeStep(3);
+            break;
+        default :
+            executeStep(1);
+            executeStep(2);
+            executeStep(3);
+    }
+};
 ]]></AuthenticationScript>
   </LocalAndOutBoundAuthenticationConfig>
   <RequestPathAuthenticatorConfigs/>
