@@ -1,25 +1,31 @@
-<?xml version="1.0" encoding="UTF-8"?><ServiceProvider>
-  <ApplicationName>demo_prompt</ApplicationName>
+  <?xml version="1.0" encoding="UTF-8"?><ServiceProvider>
+  <ApplicationName>demo_pass</ApplicationName>
   <Description/>
   <InboundAuthenticationConfig>
     <InboundAuthenticationRequestConfigs>
       <InboundAuthenticationRequestConfig>
-        <InboundAuthKey>demo_pass_params</InboundAuthKey>
-        <InboundAuthType>openid</InboundAuthType>
-        <InboundConfigType>standardAPPC</InboundConfigType>
+        <InboundAuthKey>test_server</InboundAuthKey>
+        <InboundAuthType>passivests</InboundAuthType>
+        <InboundConfigType>standardAPP</InboundConfigType>
         <Properties/>
       </InboundAuthenticationRequestConfig>
       <InboundAuthenticationRequestConfig>
-        <InboundAuthKey>travelocity.com</InboundAuthKey>
+        <InboundAuthKey>test_server</InboundAuthKey>
+        <InboundAuthType>openid</InboundAuthType>
+        <InboundConfigType>standardAPP</InboundConfigType>
+        <Properties/>
+      </InboundAuthenticationRequestConfig>
+      <InboundAuthenticationRequestConfig>
+        <InboundAuthKey>saml2-web-app-dispatch.com</InboundAuthKey>
         <InboundAuthType>samlsso</InboundAuthType>
         <InboundConfigType>standardAPP</InboundConfigType>
         <inboundConfiguration><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <samlssoServiceProviderDTO>
-    <issuer>travelocity.com</issuer>
+    <issuer>saml2-web-app-dispatch.com</issuer>
     <assertionConsumerUrls>
-        <assertionConsumerUrl>http://localhost:8080/travelocity.com/home.jsp</assertionConsumerUrl>
+        <assertionConsumerUrl>http://localhost.com:8085/saml2-web-app-dispatch.com/consumer</assertionConsumerUrl>
     </assertionConsumerUrls>
-    <defaultAssertionConsumerUrl>http://localhost:8080/travelocity.com/home.jsp</defaultAssertionConsumerUrl>
+    <defaultAssertionConsumerUrl>http://localhost.com:8085/saml2-web-app-dispatch.com/consumer</defaultAssertionConsumerUrl>
     <certAlias>wso2carbon</certAlias>
     <loginPageURL></loginPageURL>
     <attributeConsumingServiceIndex></attributeConsumingServiceIndex>
@@ -44,12 +50,6 @@
     <keyEncryptionAlgorithmURI>http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p</keyEncryptionAlgorithmURI>
 </samlssoServiceProviderDTO>
 ]]></inboundConfiguration>
-        <Properties/>
-      </InboundAuthenticationRequestConfig>
-      <InboundAuthenticationRequestConfig>
-        <InboundAuthKey>demo_pass_params</InboundAuthKey>
-        <InboundAuthType>passivests</InboundAuthType>
-        <InboundConfigType>standardAPP</InboundConfigType>
         <Properties/>
       </InboundAuthenticationRequestConfig>
     </InboundAuthenticationRequestConfigs>
@@ -77,39 +77,29 @@
     <UseUserstoreDomainInUsername>false</UseUserstoreDomainInUsername>
     <EnableAuthorization>false</EnableAuthorization>
     <AuthenticationScript enabled="true" language="application/javascript"><![CDATA[function onInitialRequest(context) {
-  executeStep(1, {
-	onSuccess: function (context) {
-	  var subject = context.steps[1].subject;
-	  var username = subject.username;
-	  var mobile = subject.localClaims['http://wso2.org/claims/mobile'];
-	  if (!mobile) {
-		promptMobileNumber(context);
-	  }
-	}
-  }
-			 );
-}
-function promptMobileNumber(context) {
-  var username = context.steps[1].subject.username;
-  var inputs = [];
-  inputs.push({
-	"id":"mobile","label":"Mobile Number"}
-			 );
-  prompt("genericForm", {
-	"username":username, "inputs":inputs}, {
-	onSuccess : function(context) {
-	  var mobile = context.request.params.mobile[0];
-	  var username = context.steps[1].subject.username;
-	  var pattern = new RegExp("[0-9]{10}");
-	  if (pattern.test(mobile)) {
-		var subject = context.steps[1].subject;
-		subject.localClaims['http://wso2.org/claims/mobile'] = mobile;
-	  }
-	  else {
-		promptMobileNumber(context);
-	  }
-	}
-  });
+    prompt("username", {
+        onSuccess: function(context, data) {
+            var username = context.request.params.username[0];
+            Log.info("================================= onSuccess prompt");
+            Log.info("================================= " + username);
+            executeStep(1, {
+                authenticatorParams: {
+                    "local": {
+                        "BasicAuthenticator": {
+                            "username": username
+                        }
+                    }
+                }
+            }, {
+                onSuccess: function(context) {
+                    Log.info("================================= onSuccess basic auth");
+                }
+            });
+        },
+        onFail: function(context, data) {
+            Log.info('================================= onFail prompt');
+        }
+    });
 }
 ]]></AuthenticationScript>
   </LocalAndOutBoundAuthenticationConfig>
@@ -131,7 +121,14 @@ function promptMobileNumber(context) {
     <SPClaimDialects/>
   </ClaimConfig>
   <PermissionAndRoleConfig>
-    <Permissions/>
+    <Permissions>
+      <ApplicationPermission>
+        <value>test_pernission_1</value>
+      </ApplicationPermission>
+      <ApplicationPermission>
+        <value>test_pernission_2</value>
+      </ApplicationPermission>
+    </Permissions>
     <RoleMappings/>
     <IdpRoles/>
   </PermissionAndRoleConfig>

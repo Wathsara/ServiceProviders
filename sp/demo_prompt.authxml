@@ -1,31 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?><ServiceProvider>
-  <ApplicationName>demo_pass</ApplicationName>
+  <ApplicationName>demo_prompt</ApplicationName>
   <Description/>
   <InboundAuthenticationConfig>
     <InboundAuthenticationRequestConfigs>
       <InboundAuthenticationRequestConfig>
-        <InboundAuthKey>test_server</InboundAuthKey>
-        <InboundAuthType>passivests</InboundAuthType>
-        <InboundConfigType>standardAPP</InboundConfigType>
-        <Properties/>
-      </InboundAuthenticationRequestConfig>
-      <InboundAuthenticationRequestConfig>
-        <InboundAuthKey>test_server</InboundAuthKey>
+        <InboundAuthKey>demo_pass_params</InboundAuthKey>
         <InboundAuthType>openid</InboundAuthType>
-        <InboundConfigType>standardAPP</InboundConfigType>
+        <InboundConfigType>standardAPPC</InboundConfigType>
         <Properties/>
       </InboundAuthenticationRequestConfig>
       <InboundAuthenticationRequestConfig>
-        <InboundAuthKey>saml2-web-app-dispatch.com</InboundAuthKey>
+        <InboundAuthKey>travelocity.com</InboundAuthKey>
         <InboundAuthType>samlsso</InboundAuthType>
         <InboundConfigType>standardAPP</InboundConfigType>
         <inboundConfiguration><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <samlssoServiceProviderDTO>
-    <issuer>saml2-web-app-dispatch.com</issuer>
+    <issuer>travelocity.com</issuer>
     <assertionConsumerUrls>
-        <assertionConsumerUrl>http://localhost.com:8085/saml2-web-app-dispatch.com/consumer</assertionConsumerUrl>
+        <assertionConsumerUrl>http://localhost:8080/travelocity.com/home.jsp</assertionConsumerUrl>
     </assertionConsumerUrls>
-    <defaultAssertionConsumerUrl>http://localhost.com:8085/saml2-web-app-dispatch.com/consumer</defaultAssertionConsumerUrl>
+    <defaultAssertionConsumerUrl>http://localhost:8080/travelocity.com/home.jsp</defaultAssertionConsumerUrl>
     <certAlias>wso2carbon</certAlias>
     <loginPageURL></loginPageURL>
     <attributeConsumingServiceIndex></attributeConsumingServiceIndex>
@@ -52,6 +46,12 @@
 ]]></inboundConfiguration>
         <Properties/>
       </InboundAuthenticationRequestConfig>
+      <InboundAuthenticationRequestConfig>
+        <InboundAuthKey>demo_pass_params</InboundAuthKey>
+        <InboundAuthType>passivests</InboundAuthType>
+        <InboundConfigType>standardAPP</InboundConfigType>
+        <Properties/>
+      </InboundAuthenticationRequestConfig>
     </InboundAuthenticationRequestConfigs>
   </InboundAuthenticationConfig>
   <LocalAndOutBoundAuthenticationConfig>
@@ -76,31 +76,58 @@
     <UseTenantDomainInUsername>false</UseTenantDomainInUsername>
     <UseUserstoreDomainInUsername>false</UseUserstoreDomainInUsername>
     <EnableAuthorization>false</EnableAuthorization>
-    <AuthenticationScript enabled="true" language="application/javascript"><![CDATA[function onInitialRequest(context) {
-    prompt("username", {
-        onSuccess: function(context, data) {
-            var username = context.request.params.username[0];
-            Log.info("================================= onSuccess prompt");
-            Log.info("================================= " + username);
-            executeStep(1, {
-                authenticatorParams: {
-                    "local": {
-                        "BasicAuthenticator": {
-                            "username": username
-                        }
-                    }
-                }
-            }, {
-                onSuccess: function(context) {
-                    Log.info("================================= onSuccess basic auth");
-                }
-            });
-        },
-        onFail: function(context, data) {
-            Log.info('================================= onFail prompt');
+    <AuthenticationScript enabled="true" language="application/javascript"><![CDATA[// This script will step up authentication for any user who are trying to log in outside from the configured network
+
+// Configure the network ranges here
+var corpNetwork = ['192.168.1.0/24', '10.100.0.0/16'];
+
+var onLoginRequest = function(context) {
+    executeStep(1, {
+        onSuccess: function (context) {
+            var user = context.currentKnownSubject;
+            // Extracting the origin IP of the request
+            var loginIp = context.request.ip;
+            Log.info('User: ' + user.username + ' logged in from IP: ' + loginIp);
+            // Checking if the IP is within the allowed range
+            if (!isCorporateIP(loginIp, corpNetwork)) {
+                executeStep(2);
+            }
         }
     });
-}
+};
+
+// Function to convert ip address string to long value
+var convertIpToLong = function(ip) {
+    var components = ip.split('.');
+    if (components) {
+        var ipAddr = 0, pow = 1;
+        for (var i = 3; i >= 0; i -= 1) {
+            ipAddr += pow * parseInt(components[i]);
+            pow *= 256;
+        }
+        return ipAddr;
+    } else {
+        return -1;
+    }
+};
+
+// Function to check if the ip address is within the given subnet
+var isCorporateIP = function(ip, subnets) {
+    var subnetLength = subnets.length;
+    for (var i = 0; i < subnetLength; i++) {
+        var subnetComponents = subnets[i].split('/');
+        var minHost = convertIpToLong(subnetComponents[0]);
+        var ipAddr = convertIpToLong(ip);
+        var mask = subnetComponents[1];
+        if (subnetComponents && minHost >= 0) {
+            var numHosts = Math.pow(2, 32 - parseInt(mask));
+            if ((ipAddr >= minHost) && (ipAddr <= minHost + numHosts - 1)) {
+                return true;
+            }
+        }
+    }
+    return false;
+};
 ]]></AuthenticationScript>
   </LocalAndOutBoundAuthenticationConfig>
   <RequestPathAuthenticatorConfigs/>
@@ -121,14 +148,7 @@
     <SPClaimDialects/>
   </ClaimConfig>
   <PermissionAndRoleConfig>
-    <Permissions>
-      <ApplicationPermission>
-        <value>test_pernission_1</value>
-      </ApplicationPermission>
-      <ApplicationPermission>
-        <value>test_pernission_2</value>
-      </ApplicationPermission>
-    </Permissions>
+    <Permissions/>
     <RoleMappings/>
     <IdpRoles/>
   </PermissionAndRoleConfig>
