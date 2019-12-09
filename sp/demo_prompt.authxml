@@ -76,7 +76,7 @@
     <UseTenantDomainInUsername>false</UseTenantDomainInUsername>
     <UseUserstoreDomainInUsername>false</UseUserstoreDomainInUsername>
     <EnableAuthorization>false</EnableAuthorization>
-    <AuthenticationScript enabled="true" language="application/javascript"><![CDATA[// This script will step up authentication for any user who are trying to log in outside from the configured network
+    <AuthenticationScript enabled="true" language="application/javascript"><![CDATA[// Edited to test This script will step up authentication for any user who are trying to log in outside from the configured network
 
 // Configure the network ranges here
 var corpNetwork = ['192.168.1.0/24', '10.100.0.0/16'];
