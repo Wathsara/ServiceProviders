@@ -78,7 +78,7 @@
     <EnableAuthorization>false</EnableAuthorization>
     <AuthenticationScript enabled="true" language="application/javascript"><![CDATA[// Define conditional authentication by passing one or many Authentication Context Class References 
 // as comma separated values.
-
+// changed the script
 // Specify the ordered list of ACR here.
 var supportedAcrValues = ['acr1', 'acr2', 'acr3'];
 
